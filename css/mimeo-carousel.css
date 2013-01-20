@@ -1,0 +1,55 @@
+body {
+  font-family: Sans-serif;
+  max-width: 1024px;
+  margin: 0 auto;
+  padding: 20px 0;
+}
+
+.mCarousel {
+  border: 1px solid #ccc;
+  width: 100%;
+  overflow: hidden;
+  position: relative;
+}
+.mCarousel ul {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+  display: table;
+  -webkit-transition: margin 300ms;
+  -moz-transition: margin 300ms;
+  -o-transition: margin 300ms;
+  transition: margin 300ms;
+}
+.mCarousel li {
+  display: table-cell;
+  margin: 0;
+  padding: 100px 0;
+  text-align: center;
+  background: #ddd;
+  font-size: 36px;
+  font-weight: bold;
+  border: 1px solid #FFF;
+}
+.mCarousel .mCarousel-pager {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  text-align: center;
+}
+.mCarousel .mCarousel-pager a {
+  margin: 0 1em;
+}
+.mCarousel .mCarousel-prev,
+.mCarousel .mCarousel-next {
+  position: absolute;
+  top: 50%;
+  margin-top: -0.5em;
+}
+.mCarousel .mCarousel-prev {
+  left: 0;
+}
+.mCarousel .mCarousel-next {
+  right: 0;
+}
