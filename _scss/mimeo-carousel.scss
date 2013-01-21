@@ -9,6 +9,17 @@ body {
     padding: 20px 0;
 }
 
+.mCarousel-detector {
+    position: absolute;
+    top: -99999px;
+    left: -99999px;
+    @include transition(min-height .01ms);
+    min-height: 1px;
+    @media (min-width: 400px) { 
+        min-height: 2px; 
+    }
+}
+
 .mCarousel {
     border: 1px solid #ccc;
     width: 100%;
@@ -22,7 +33,7 @@ body {
         padding: 0;
         //width: 100%;
         display: table;
-        @include transition(margin 300ms);
+        @include transition(all 300ms);
     }
     li {
         display: table-cell;
@@ -49,6 +60,10 @@ body {
 
         a {
             margin: 0 1em;
+
+            &.visible {
+                background: red;
+            }
         }
     }
     .mCarousel-prev,
