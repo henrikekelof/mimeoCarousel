@@ -1,25 +1,140 @@
+
+// Mimeo Modernize v1.0 | Henrik Ekelöf - @henrikekelof
+
+var _M;
+
+(function (doc, undefined) {
+
+	'use strict';
+
+	var el = doc.createElement('div'),
+		elStyle = el.style,
+		prefixes = ['ms', 'O', 'Moz', 'Webkit'],
+		transitionEnds = {
+			'transition': 'transitionend',
+			'msTransition': 'MsTransitionEnd',
+			'OTransition': 'transitionend',
+			'MozTransition': 'transitionend',
+			'WebkitTransition': 'webkitTransitionEnd'
+		},
+		i, j;
+
+	function capitalize(s) {
+		// TODO: Extend prototype or add to _ ?
+	    return s.charAt(0).toUpperCase() + s.slice(1);
+	}
+
+	function prefixed(prop) {
+		if (!_.isString(prop)) {
+			return;
+		}
+		if (prop in elStyle) {
+			return prop;
+		}
+		prop = capitalize(prop);
+		for (var i = 0, j = prefixes.length; i < j; i += 1) {
+			if (prefixes[i] + prop in elStyle) {
+				return prefixes[i] + prop;
+			}
+		}
+	}
+
+	_M = {
+		prefixed: prefixed,
+		transition: prefixed('transition'),
+		transitionDuration: prefixed('transitionDuration'),
+		transform: prefixed('transform')
+	};
+
+	_M.transitionend = transitionEnds[_M.transition];
+
+
+}(document));
+
 // Mimeo Carousel v1.0 | Henrik Ekelöf - @henrikekelof
 
 /*global $, console */
 
 var _mCarousel;
 
-(function () {
+(function (undefined) {
 
 	'use strict';
 
+	var carouselCount = 0;
 
+	var xxx = document.createElement('div'),
+		yyy = xxx.style,
+		ppp = ['ms', 'O','Moz','Webkit'],
+		transitionName = _M.transition, 
+		transitionEndName = _M.transitionend,
+		has3D = false,
+		transformName = _M.transform,
+		transitionDurationName = _M.transitionDuration;
+	
+	
+	for (var i = 0; i < ppp.length; i += 1) {
+		xxx.style[ppp[i] + 'Transform'] = 'translate3d(20px,0,0)';
+	}
+
+	if (window.getComputedStyle) {
+		document.body.insertBefore(xxx, null);
+		
+		var transforms = {
+	            'webkitTransform':'-webkit-transform',
+	            'OTransform':'-o-transform',
+	            'msTransform':'-ms-transform',
+	            'MozTransform':'-moz-transform',
+	            'transform':'transform'
+	        };
+	    
+	    var tttest;
+
+	    for (var t in transforms) {
+	    		
+	    		tttest = window.getComputedStyle(xxx).getPropertyValue(transforms[t]);
+
+		        if (tttest !== undefined && tttest.length > 0 && tttest !== "none") {
+		        	
+		        	
+		        	has3D = true;
+		        	break;
+		        }
+		    }
+
+		console.log(window.getComputedStyle(xxx).getPropertyValue('transform'));
+
+		document.body.removeChild(xxx);
+	}
+
+	console.log('has3D: ' + has3D);
+	console.log(transitionName);
+	
 
 	_mCarousel = function ($elm, opts) {
 		
+		carouselCount += 1;
+
 		console.log($elm);
 		this.$elm = $elm;
 		this.$container = opts.container;
 		this.$items = opts.items;
 		this.visible = opts.visible;
+
+		if (_.isArray(this.visible)) {
+			this.breaks = this.visible;	
+			this.visible = 1; // Todo: get from window width
+		} else {
+			this.breaks = false;
+		}
+
 		this.glimpseRight = opts.glimpseRight;
 		this.glimpseLeft = opts.glimpseLeft;
 		this.move = opts.move;
+		
+		this.lastBreak = false;
+		this.breakAtLow = false;
+		this.breakAtHigh = false;
 		this.length = this.$items.length;
 		this.position = 1;
 		this.maxRight = this.length - this.visible + 1;
@@ -47,16 +162,22 @@ var _mCarousel;
 
 			//this.$container.css('margin-left', cssMargin + '%');
 
-			this.$container[0].style.webkitTransitionDuration = 
-				this.$container[0].style.MozTransitionDuration = 
-				this.$container[0].style.msTransitionDuration = 
-				this.$container[0].style.OTransitionDuration = 
-				this.$container[0].style.transitionDuration = '';
+			this.$container[0].style[transitionDurationName] = '';
 
-			this.$container[0].style.MozTransform = this.$container[0].style.webkitTransform = 'translate3d(' + cssTranslate + '%,0,0)';
-			this.$container[0].style.msTransform = this.$container[0].style.OTransform = 'translateX(' + cssTranslate + '%)';
+			if (has3D) {
+				this.$container[0].style[transformName] = 'translate3d(' + cssTranslate + '%,0,0)';
+			
+			} else {
+				if (transformName) {
+					this.$container[0].style[transformName] = 'translateX(' + cssTranslate + '%)';
+				} else {
+					// Fallback use margin
+				}
+			}
+			//this.$container[0].style.msTransform = this.$container[0].style.OTransform = 'translateX(' + cssTranslate + '%)';
 
-			setPagerPosition(this);
+			setPagerPosition.apply(this);
+
 		},
 		prev: function () {
 			var goto = this.position - this.move;
@@ -84,14 +205,40 @@ var _mCarousel;
 			}
 			this.position = goto;
 			this.goto(this.position);
+		},
+		setVisible: function (n, m) {
+			console.log('Setting ' + n);
+			this.visible = n;
+			this.move = n;
+			this.maxRight = this.length - this.visible + 1;
+			this.$container
+			.css({
+					'width': this.$elm.width() * this.length * (1 - this.glimpseRight - this.glimpseLeft) / this.visible
+				});
+
+			this.$items.width(1 / this.length * 100 + '%');
+
+			if (this.visible === this.length) {
+				this.$elm.find('.mCarousel-pager, .mCarousel-prev, .mCarousel-next').hide();
+			} else {
+				this.$elm.find('.mCarousel-pager, .mCarousel-prev, .mCarousel-next').show();
+			}
+
+			if (this.position > this.maxRight) {
+				this.goto(this.maxRight);
+			}
+
+			setPagerPosition.apply(this);
+
 		}
+
     };
 
-    function setPagerPosition(carousel) {
-    	carousel.$elm.find('.mCarousel-pager a')
+    function setPagerPosition() {
+    	this.$elm.find('.mCarousel-pager a')
     		.removeClass('visible');
-    	carousel.$elm.find('.mCarousel-pager a')
-    		.slice(carousel.position - 1, carousel.position - 1 + carousel.visible)
+    	this.$elm.find('.mCarousel-pager a')
+    		.slice(this.position - 1, this.position - 1 + this.visible)
     		.addClass('visible');
     }
 
@@ -122,7 +269,7 @@ var _mCarousel;
 
 		carousel.$elm.append($buttonNav);
 
-		setPagerPosition(carousel);
+		
 
 		carousel.$elm.find('.mCarousel-next').on('click', function (e) {
 			e.preventDefault();
@@ -139,14 +286,117 @@ var _mCarousel;
 			carousel.goto(parseInt($(e.target).data('goto'), 10));
 		});
 
+		function setupBreaks() {
+			var w = $(window).width(),
+				i;
+			for (i = 0; i < carousel.breaks.length; i += 1) {
+				// [[1, 1], [321, 2], [640, 3], [768, 4]] 
+				if (w >= carousel.breaks[i][0]) {
+					carousel.lastBreak = carousel.breaks[i];
+				} else {
+					break;
+				}
+			}
+			
+			if (i === 1) {
+				carousel.breakAtLow = [0, 0];
+				carousel.breakAtHigh = carousel.breaks[i];
+			}
+			else if (i === carousel.breaks.length) {
+				carousel.breakAtLow = carousel.breaks[i-2];
+				carousel.breakAtHigh = [Math.max(window.screen.width, window.screen.height) * 2, 0];
+			} else {
+				carousel.breakAtLow = carousel.breaks[i-2];
+				carousel.breakAtHigh = carousel.breaks[i];
+			}
+
+			console.log('Setup');
+			console.log(carousel.breakAtLow);
+			console.log(carousel.lastBreak);
+			console.log(carousel.breakAtHigh);
+
+			carousel.setVisible(carousel.lastBreak[1]);
+
+		}
+
+		function resetBreaks() {
+			
+			var w = $(window).width(),
+				i;
+			
+			for (i = 0; i < carousel.breaks.length; i += 1) {
+				// [[1, 1], [321, 2], [640, 3], [768, 4]] 
+				if (carousel.lastBreak[0] === carousel.breaks[i][0]) {
+					break;
+				}
+			}
+
+			console.log(i);
+			
+			if (i === 1) {
+				carousel.breakAtLow = carousel.breaks[i-1];
+				carousel.breakAtHigh = carousel.breaks[i+1];
+			}
+			else if (i === carousel.breaks.length - 1) {
+				carousel.breakAtLow = carousel.breaks[i-1];
+				carousel.breakAtHigh = [Math.max(window.screen.width, window.screen.height) * 2, 0];
+			} else {
+				carousel.breakAtLow = carousel.breaks[i-1];
+				carousel.breakAtHigh = carousel.breaks[i+1];
+			}
+
+			console.log('Resize');
+			console.log(carousel.breakAtLow);
+			console.log(carousel.lastBreak);
+			console.log(carousel.breakAtHigh);
+			
+			//carousel.setVisible(carousel.lastBreak[1]);
+
+		}
+
+		if (carousel.breaks) {
+			setupBreaks();
+		}
+
+		setPagerPosition.apply(carousel);
+
 		$(window).on('resize', function () {
+
 			carousel.$container
 				.css({
 					'width': carousel.$elm.width() * carousel.length * (1 - carousel.glimpseRight - carousel.glimpseLeft) / carousel.visible,
 					'margin-right': (carousel.glimpseRight) * 100 + '%',
 					'margin-left': (carousel.glimpseLeft) * 100 + '%'
 				});
-			});
+
+			if (carousel.breaks) {
+				
+				var w = $(window).width(),
+					i;
+
+				//} else {
+				if (w < carousel.lastBreak[0]) {
+					console.log('Break low');
+					if (carousel.breakAtLow[1] !== carousel.lastBreak[1]) {
+						carousel.setVisible(carousel.breakAtLow[1]);
+					}
+					carousel.lastBreak = carousel.breakAtLow;
+					resetBreaks();
+				}
+				if (w >= carousel.breakAtHigh[0]) {
+					console.log('Break hi');	
+					if (carousel.breakAtHigh[1] !== carousel.lastBreak[1]) {
+						carousel.setVisible(carousel.breakAtHigh[1]);	
+					}
+					carousel.lastBreak = carousel.breakAtHigh;
+					resetBreaks();
+				}
+				//}
+
+				//this.lastBreak = x;
+			}
+
+		});
 
 		$(document.body).append($breakpointDetector);
 
@@ -170,11 +420,7 @@ var _mCarousel;
 			
 			carousel.deltaX = 0;
 
-			carousel.$container[0].style.webkitTransitionDuration = 
-				carousel.$container[0].style.MozTransitionDuration = 
-				carousel.$container[0].style.msTransitionDuration = 
-				carousel.$container[0].style.OTransitionDuration = 
-				carousel.$container[0].style.transitionDuration = '0';
+			carousel.$container[0].style[transitionDurationName] = '0';
 
 //			carousel.$container[0].style.MozTransitionDuration = carousel.$container[0].style.webkitTransitionDuration = 0;
 			
@@ -264,146 +510,25 @@ var _mCarousel;
 
 	'use strict';
 
-	var $carousels = $('.mCarousel');
+	var $carousels = $('.mCarousel'),
+		instances = [];
 
 	$carousels.each(function (i, elm) {
 		var $elm = $(elm);
-		new _mCarousel($elm, {
+		instances.push(new _mCarousel($elm, {
 			container: $elm.find('ul').first(),
 			items: $elm.find('li'),
-			visible: i + 1,
+			visible: (i == 0 ? [[1, 1], [480, 2], [640, 3], [768, 4]] : i),
 			move: i + 1,
-			glimpseRight: (i == 0 ? .1 : 0),
+			glimpseRight: (i == 1 ? .1 : 0),
 			glimpseLeft: 0 //.1
-		});
+		}));
 		
 	});
 
-}());
-/*
-(function (undefined) {
-
-    'use strict';
-    
-    var Mimeo, mimeo,
-		current, instances = {};
-
-	function hasKey(query) {
-		return (query && _.has(_m.breakpoints, query));
-	}
-
-	function value(query) {
-		if (hasKey(query)) {
-			return _m.breakpoints[query];
-		}
-	}
-
-	function narrowerThan(query) {
-		return (hasKey(query) && value(current) < value(query));
-	}
-
-	function equals(query) {
-		return (hasKey(query) && value(current) === value(query));
-	}
-
-	function widerThan(query) {
-		return (hasKey(query) && value(current) > value(query));
-	}
-
-    window._m = function (query) {
-		if (_.isString(query) && hasKey(query)) {
-			if (!instances.hasOwnProperty(query)) {
-				instances[query] = new Mimeo(query);
-			}
-			return instances[query];
-		} else {
-			return mimeo;
-		}
-    };
-
-    Mimeo = function (query) {
-		if (query) {
-			this.query = query;
-		}
-    };
-
-    _m.fn = Mimeo.prototype = {
-		wider: function (fn, args) {
-			if (_.isFunction(fn) && this.query && widerThan(this.query)) {
-				fn(args);
-			}
-			return this;
-		},
-		equal: function (fn, args) {
-			if (_.isFunction(fn) && this.query && equals(this.query)) {
-				fn(args);
-			}
-			return this;
-		},
-		narrower: function (fn, args) {
-			if (_.isFunction(fn) && this.query && narrowerThan(this.query)) {
-				fn(args);
-			}
-			return this;
-		}
-    };
-
-    _m.set = function (breakpoint) {
-		if (hasKey(breakpoint)) {
-			_m.current(breakpoint);
-			return true;
-		}
-		return false;
-	};
-
-	_m.current = function (breakpoint) {
-		if (breakpoint && _.isString(breakpoint) && hasKey(breakpoint)) {
-			current = breakpoint;
-		} else {
-			return current;
-		}
-	};
-
-	_m.narrowerThan = narrowerThan;
-	_m.equals = equals;
-	_m.widerThan = widerThan;
-
-    mimeo = new Mimeo();
-
-}());
-
-
-(function () {
- 
-	'use strict';
-
-	var modulesIncluded = { },
-		modulesLength = 0,
-		i, l;
-
-	function addModules(mods) {
-		if (!modulesIncluded[mods]) {
-			modulesIncluded[mods] = true;
-			modulesLength += 1;
-		}
-	}
-
-	function include(mods) {
-
-		if (typeof mods === 'string') {
-			addModules(mods);
-		} else {
-			for (i = 0, l = mods.length; i < l; i += 1) {
-				addModules(mods[i]);
-			}
-		}
-	}
-
-	_m.include = include;
-	_m.included = modulesIncluded;
 	
+
 }());
-*/
 
 
 
