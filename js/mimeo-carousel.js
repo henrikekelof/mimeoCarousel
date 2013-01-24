@@ -19,9 +19,13 @@ var _M;
 		},
 		i, j;
 
+	if (window.getComputedStyle) {
+		document.body.insertBefore(el, null);
+	}
+
 	function capitalize(s) {
 		// TODO: Extend prototype or add to _ ?
-	    return s.charAt(0).toUpperCase() + s.slice(1);
+		return s.charAt(0).toUpperCase() + s.slice(1);
 	}
 
 	function prefixed(prop) {
@@ -39,15 +43,45 @@ var _M;
 		}
 	}
 
+	function computed(prefixedProp, val) {
+
+		var style,
+			props = {
+				'transform': 'transform',
+				'msTransform': '-ms-transform',
+				'OTransform': '-o-transform',
+				'MozTransform': '-moz-transform',
+				'WebkitTransform': '-webkit-transform'
+			};
+
+		el.style[prefixedProp] = val;
+
+		style = window.getComputedStyle(el).getPropertyValue(props[prefixedProp]);
+
+        if (style !== undefined && style.length > 0 && style !== "none") {
+        	return true;
+        }
+
+        return false;
+
+	}
+
 	_M = {
 		prefixed: prefixed,
 		transition: prefixed('transition'),
 		transitionDuration: prefixed('transitionDuration'),
 		transform: prefixed('transform')
 	};
+	
+	_M.translate3d = (_M.transform) ?
+						computed(_M.transform, 'translate3d(1px,0,0)') :
+						false;
 
 	_M.transitionend = transitionEnds[_M.transition];
 
+	if (window.getComputedStyle) {
+		document.body.removeChild(el);
+	}
 
 }(document));
 
@@ -61,55 +95,13 @@ var _mCarousel;
 
 	'use strict';
 
-	var carouselCount = 0;
-
-	var xxx = document.createElement('div'),
-		yyy = xxx.style,
-		ppp = ['ms', 'O','Moz','Webkit'],
-		transitionName = _M.transition, 
+	var carouselCount = 0,
+		transitionName = _M.transition,
 		transitionEndName = _M.transitionend,
-		has3D = false,
 		transformName = _M.transform,
 		transitionDurationName = _M.transitionDuration;
 	
-	
-	for (var i = 0; i < ppp.length; i += 1) {
-		xxx.style[ppp[i] + 'Transform'] = 'translate3d(20px,0,0)';
-	}
 
-	if (window.getComputedStyle) {
-		document.body.insertBefore(xxx, null);
-		
-		var transforms = {
-	            'webkitTransform':'-webkit-transform',
-	            'OTransform':'-o-transform',
-	            'msTransform':'-ms-transform',
-	            'MozTransform':'-moz-transform',
-	            'transform':'transform'
-	        };
-	    
-	    var tttest;
-
-	    for (var t in transforms) {
-	    		
-	    		tttest = window.getComputedStyle(xxx).getPropertyValue(transforms[t]);
-
-		        if (tttest !== undefined && tttest.length > 0 && tttest !== "none") {
-		        	
-		        	
-		        	has3D = true;
-		        	break;
-		        }
-		    }
-
-		console.log(window.getComputedStyle(xxx).getPropertyValue('transform'));
-
-		document.body.removeChild(xxx);
-	}
-
-	console.log('has3D: ' + has3D);
-	console.log(transitionName);
-	
 
 	_mCarousel = function ($elm, opts) {
 		
@@ -122,7 +114,7 @@ var _mCarousel;
 		this.visible = opts.visible;
 
 		if (_.isArray(this.visible)) {
-			this.breaks = this.visible;	
+			this.breaks = this.visible;
 			this.visible = 1; // Todo: get from window width
 		} else {
 			this.breaks = false;
@@ -162,9 +154,11 @@ var _mCarousel;
 
 			//this.$container.css('margin-left', cssMargin + '%');
 
-			this.$container[0].style[transitionDurationName] = '';
-
-			if (has3D) {
+			// this.$container[0].style[transitionDurationName] = '';
+			
+			// this.$container.css('margin-left', + ( this.width / this.length * this.visible * (pos - 1) * -1 )  + 'px');
+			
+			if (_M.translate3d) {
 				this.$container[0].style[transformName] = 'translate3d(' + cssTranslate + '%,0,0)';
 			
 			} else {
@@ -172,9 +166,10 @@ var _mCarousel;
 					this.$container[0].style[transformName] = 'translateX(' + cssTranslate + '%)';
 				} else {
 					// Fallback use margin
+			 		this.$container[0].style['marginLeft'] = cssMargin + '%';
 				}
 			}
-			//this.$container[0].style.msTransform = this.$container[0].style.OTransform = 'translateX(' + cssTranslate + '%)';
+			this.$container[0].style.msTransform = this.$container[0].style.OTransform = 'translateX(' + cssTranslate + '%)';
 
 			setPagerPosition.apply(this);
 
@@ -188,6 +183,7 @@ var _mCarousel;
 				goto = this.maxRight;
 			}
 			this.position = goto;
+
 			this.goto(this.position);
 		},
 		// 1.2.3.4.5
@@ -204,6 +200,7 @@ var _mCarousel;
 				goto = 1;
 			}
 			this.position = goto;
+
 			this.goto(this.position);
 		},
 		setVisible: function (n, m) {
@@ -519,7 +516,7 @@ var _mCarousel;
 			container: $elm.find('ul').first(),
 			items: $elm.find('li'),
 			visible: (i == 0 ? [[1, 1], [480, 2], [640, 3], [768, 4]] : i),
-			move: i + 1,
+			move: i,
 			glimpseRight: (i == 1 ? .1 : 0),
 			glimpseLeft: 0 //.1
 		}));
