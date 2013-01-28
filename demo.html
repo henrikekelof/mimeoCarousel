@@ -14,6 +14,12 @@
     
     <link rel="stylesheet" href="css/mimeo-carousel.css">
     
+    <script>
+    (function () {
+        var docElm = document.documentElement;
+        docElm.className = docElm.className.replace(/\bno-js\b/g, '') + ' js ';
+    }());
+    </script>
         
 </head>
 <body>
@@ -30,93 +36,180 @@
     
     <div role="main">
 
-        <div class="mCarousel">
+        <div class="section">
+            <h2>Carousel header</h2>
+        </div>
+
+        <div class="mCarousel photos">
+
             <ul>
                 <li>
-                    <div>1</div>
+                    <img src="assets/pj1.jpg" alt="">
                 </li>
                 <li>
-                    <div>2</div>
+                    <img src="assets/pj2.jpg" alt="">
                 </li>
                 <li>
-                    <div>3</div>
+                    <img src="assets/pj3.jpg" alt="">
                 </li>
                 <li>
-                    <div>4</div>
+                    <img src="assets/pj4.jpg" alt="">
+                </li>
+                <li>
+                    <img src="assets/pj5.jpg" alt="">
                 </li>
             </ul>                
         </div>
 
-        <hr>
-
-        <div class="mCarousel">
-            <ul>
-                <li>
-                    <div>1</div>
-                </li>
-                <li>
-                    <div>2</div>
-                </li>
-                <li>
-                    <div>3</div>
-                </li>
-                <li>
-                    <div>4</div>
-                </li>
-            </ul>                
-        </div>
-
-        <div class="mCarousel">
-            <ul>
-                <li>
-                    <div>1</div>
-                </li>
-                <li>
-                    <div>2</div>
-                </li>
-                <li>
-                    <div>3</div>
-                </li>
-                <li>
-                    <div>4</div>
-                </li>
-                <li>
-                    <div>5</div>
-                </li>
-                <li>
-                    <div>6</div>
-                </li>
-                <li>
-                    <div>7</div>
-                </li>
-            </ul>                
-        </div>
-
-        Main content. This marks the content that is directly related to or expands upon the central topic of the document. Within any document or application, the author SHOULD mark no more than one element with the main role.
-        
-        <div role="form">
-            <form>
-                A form.
-            </form>
+        <div class="section">
+            <h2>Carousel header</h2>
         </div>
         
+        <div class="mCarousel one-two">
+
+            <ul>
+                
+                <li>
+                    <div class="product container">
+                        <img src="assets/product4.jpg" alt="">
+                        <div class="name">Grault</div>
+                        <div class="price">$25</div>
+                    </div>
+                </li>
+                <li>
+                    <div class="product container">
+                        <img src="assets/product2.jpg" alt="">
+                        <div class="name">Quux</div>
+                        <div class="price">$29</div>
+                    </div>
+                </li>
+                <li>
+                    <div class="product container">
+                        <img src="assets/product1.jpg" alt="">
+                        <div class="name">Garply</div>
+                        <div class="price">$39</div>
+                    </div>
+                </li>
+                
+                <li>
+                    <div class="product container">
+                        <img src="assets/product3.jpg" alt="">
+                        <div class="name">Corge</div>
+                        <div class="price">$19</div>
+                    </div>
+                </li>
+            </ul>                
+        </div>
+        
+        <div class="section">
+            <h2>Carousel header</h2>
+        </div>
+
+        <div class="mCarousel one-four">
+
+            <ul>
+
+                <li>
+                    <div class="product container">
+                        <img src="assets/product2.jpg" alt="">
+                        <div class="name">Foo</div>
+                        <div class="price">$10</div>
+                    </div>
+                </li>
+                <li>
+                    <div class="product container">
+                        <img src="assets/product3.jpg" alt="">
+                        <div class="name">Bar</div>
+                        <div class="price">$20</div>
+                    </div>
+                </li>
+                <li>
+                    <div class="product container">
+                        <img src="assets/product4.jpg" alt="">
+                        <div class="name">Baz</div>
+                        <div class="price">$30</div>
+                    </div>
+                </li>
+                <li>
+                    <div class="product container">
+                        <img src="assets/product1.jpg" alt="">
+                        <div class="name">Qux</div>
+                        <div class="price">$40</div>
+                    </div>
+                </li>
+                
+                <li>
+                    <div class="product container">
+                        <img src="assets/product3.jpg" alt="">
+                        <div class="name">Fred</div>
+                        <div class="price">$19</div>
+                    </div>
+                </li>
+                <li>
+                    <div class="product container">
+                        <img src="assets/product2.jpg" alt="">
+                        <div class="name">Waldo</div>
+                        <div class="price">$29</div>
+                    </div>
+                </li>
+                <li>
+                    <div class="product container">
+                        <img src="assets/product4.jpg" alt="">
+                        <div class="name">Plugh</div>
+                        <div class="price">$25</div>
+                    </div>
+                </li>
+                <li>
+                    <div class="product container">
+                        <img src="assets/product1.jpg" alt="">
+                        <div class="name">Thud</div>
+                        <div class="price">$39</div>
+                    </div>
+                </li>
+                <li>
+                    <div class="product container">
+                        <img src="assets/product3.jpg" alt="">
+                        <div class="name">Corge</div>
+                        <div class="price">$19</div>
+                    </div>
+                </li>
+                <li>
+                    <div class="product container">
+                        <img src="assets/product4.jpg" alt="">
+                        <div class="name">Grault</div>
+                        <div class="price">$25</div>
+                    </div>
+                </li>
+                <li>
+                    <div class="product container">
+                        <img src="assets/product1.jpg" alt="">
+                        <div class="name">Garply</div>
+                        <div class="price">$39</div>
+                    </div>
+                </li>
+            </ul>                
+        </div>
+
+        <div class="section">
+            Main content. This marks the content that is directly related to or expands upon the central topic of the document. Within any document or application, the author SHOULD mark no more than one element with the main role.
+        </div>
+
     </div>
     
-    <div role="complementary">
-
-        Sidebar. The content should be relevant to the main content; if it is completely separable, a more general role should be used instead.
-
-    </div>
     
     <div role="contentinfo">
 
-        Page footer. Metadata that applies to the parent document.For example, footnotes, copyrights, and links to privacy statements would belong here.Note: Within any document or application, the author SHOULD mark no more than one element with the contentinfo role.
+        <div class="section">
+            Page footer. Metadata that applies to the parent document.For example, footnotes, copyrights, and links to privacy statements would belong here.Note: Within any document or application, the author SHOULD mark no more than one element with the contentinfo role.
+        </div>
 
     </div>
     
     <script src="js/jquery-1.9.0.min.js"></script>
     <script src="js/mimeo-understreck.js"></script>
+    <script src="js/_M.js"></script>
     <script src="js/mimeo-carousel.js"></script>
+    <script src="js/demo.js"></script>
 
 </body>
 </html>
