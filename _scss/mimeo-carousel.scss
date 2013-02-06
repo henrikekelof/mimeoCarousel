@@ -35,7 +35,16 @@ img {
         display: table;
         //-webkit-backface-visibility: hidden;
         -webkit-transform: translate3d(0,0,0);
+        
         @include transition(all 300ms);
+
+        -webkit-transform: translate3d(0, 0, 0);
+
+        -webkit-transition: -webkit-transform 300ms;
+        -moz-transition: -moz-transform 300ms;
+        -o-transition: -o-transform 300ms;
+        transition: transform 300ms;
+
     }
     li {
         float: left;
@@ -64,6 +73,9 @@ img {
             &.visible {
                 background: #a60000;
             }
+            &.grouped {
+                display: none;
+            }
         }
     }
     .mCarousel-prev,
@@ -77,10 +89,12 @@ img {
         width: 24px;
         @include border-radius(14px);
         background: rgba(#FFF, .2);
+        border: 2px solid #ccc;
         border: 2px solid rgba(#ccc, .8);
         @include transition(all .25s);
         
         &:after {
+            color: #a60000;
             color: rgba(#a60000, .8);
             position: absolute;
             top: -6px;

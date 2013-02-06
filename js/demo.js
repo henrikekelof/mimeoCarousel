@@ -10,7 +10,7 @@
 		
 		var $elm = $(elm);
 
-		carousels.push(new _mCarousel($elm, {
+		carousels.push(new _mCarousel(elm, {
 			visible: [[1, 1], [640, 2]]
 		}));
 		
@@ -22,7 +22,7 @@
 		
 		var $elm = $(elm);
 
-		carousels.push(new _mCarousel($elm, {
+		carousels.push(new _mCarousel(elm, {
 			visible: [[1, 1], [480, 2]]
 		}));
 
@@ -30,7 +30,7 @@
 		
 			var $elm = $(elm);
 
-			carousels.push(new _mCarousel($elm, {
+			carousels.push(new _mCarousel(elm, {
 				visible: [
 					[1, 1, 0, 0.15],
 					[480, 2, 0, 0],

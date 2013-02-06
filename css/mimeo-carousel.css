@@ -31,6 +31,11 @@ img {
   -moz-transition: all 300ms;
   -o-transition: all 300ms;
   transition: all 300ms;
+  -webkit-transform: translate3d(0, 0, 0);
+  -webkit-transition: -webkit-transform 300ms;
+  -moz-transition: -moz-transform 300ms;
+  -o-transition: -o-transform 300ms;
+  transition: transform 300ms;
 }
 .mCarousel li {
   float: left;
@@ -65,6 +70,9 @@ img {
 .mCarousel .mCarousel-pager a.visible {
   background: #a60000;
 }
+.mCarousel .mCarousel-pager a.grouped {
+  display: none;
+}
 .mCarousel .mCarousel-prev,
 .mCarousel .mCarousel-next {
   position: absolute;
@@ -80,6 +88,7 @@ img {
   -o-border-radius: 14px;
   border-radius: 14px;
   background: rgba(255, 255, 255, 0.2);
+  border: 2px solid #ccc;
   border: 2px solid rgba(204, 204, 204, 0.8);
   -webkit-transition: all 0.25s;
   -moz-transition: all 0.25s;
@@ -88,6 +97,7 @@ img {
 }
 .mCarousel .mCarousel-prev:after,
 .mCarousel .mCarousel-next:after {
+  color: #a60000;
   color: rgba(166, 0, 0, 0.8);
   position: absolute;
   top: -6px;

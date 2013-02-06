@@ -138,6 +138,21 @@
 		};
 	};
 
+// * var iceCream = { 'flavor': 'chocolate' };
+//   * _.defaults(iceCream, { 'flavor': 'vanilla', 'sprinkles': 'rainbow' });
+//   * // => { 'flavor': 'chocolate', 'sprinkles': 'rainbow' }
+
+	_.defaults = function (a, b) {
+	    'use strict';
+	    var prop;
+	    for (prop in b) {
+	        if (b.hasOwnProperty(prop)) {
+	            a[prop] = b[prop];
+	        }
+	    }
+	    return a;
+	};
+
 	_.each = each;
 	_.has = has;
 	_.throttle = throttle;
