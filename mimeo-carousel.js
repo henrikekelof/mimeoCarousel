@@ -1,11 +1,105 @@
 // Mimeo Carousel v1.0 | Henrik Ekelöf - @henrikekelof
-/*global _, _M */
 
 var _mCarousel;
 
 (function (win, doc, undefined) {
 
     'use strict';
+
+    // _M feature detection
+    
+    var isArray,
+        _M,
+        el = doc.createElement('div'),
+        elStyle = el.style,
+        Modernizr = window.Modernizr || {},
+        prefixes = ['ms', 'O', 'Moz', 'Webkit'];
+
+    if (window.getComputedStyle) {
+        document.body.insertBefore(el, null);
+    }
+
+    function isString(obj) {
+        return Object.prototype.toString.call(obj) === '[object String]';
+    }
+
+    function capitalize(s) {
+        return s.charAt(0).toUpperCase() + s.slice(1);
+    }
+
+    function prefixed(prop) {
+        if (!isString(prop)) {
+            return;
+        }
+        if (prop in elStyle) {
+            return prop;
+        }
+        prop = capitalize(prop);
+        for (var i = 0, j = prefixes.length; i < j; i += 1) {
+            if (prefixes[i] + prop in elStyle) {
+                return prefixes[i] + prop;
+            }
+        }
+    }
+
+    function computed(prefixedProp, val) {
+
+        var style,
+            props = {
+                'transform': 'transform',
+                'msTransform': '-ms-transform',
+                'OTransform': '-o-transform',
+                'MozTransform': '-moz-transform',
+                'WebkitTransform': '-webkit-transform'
+            };
+
+        el.style[prefixedProp] = val;
+
+        style = window.getComputedStyle(el).getPropertyValue(props[prefixedProp]);
+
+        if (style !== undefined && style.length > 0 && style !== 'none') {
+            return true;
+        }
+
+        return false;
+
+    }
+
+    _M = {
+        transitionDuration: prefixed('transitionDuration'),
+        transform: prefixed('transform')
+    };
+    
+    _M.translate3d = (_M.transform) ?
+                        computed(_M.transform, 'translate3d(1px,0,0)') :
+                        false;
+
+    _M.touch = (Modernizr.touch) ?
+        Modernizr.touch : 'ontouchstart' in doc.documentElement;
+
+    if (window.getComputedStyle) {
+        document.body.removeChild(el);
+    }
+
+    // Utilities
+
+    function defaults(a, b) {
+        var prop;
+        for (prop in b) {
+            if (b.hasOwnProperty(prop)) {
+                a[prop] = b[prop];
+            }
+        }
+        return a;
+    }
+
+    isArray = Array.isArray || function (obj) {
+        return Object.prototype.toString.call(obj) === '[object Array]';
+    };
+
+    function isNumber(obj) {
+        return Object.prototype.toString.call(obj) === '[object Number]';
+    }
 
     function getWidth(elm) {
         return parseInt(elm.offsetWidth, 10);
@@ -21,7 +115,6 @@ var _mCarousel;
             return;
         }
     }
-
 
     function animate(element, prop, end, time) {
         var interval, times, pos, step,
@@ -40,50 +133,58 @@ var _mCarousel;
             element.style.marginLeft = pos + '%';
         }, 10);
     }
-
     
     function setStyle(elm, styles) {
-        _.each(styles, function (a, b) {
-            elm.style[b] = a;
-        });
+        var prop;
+        for (prop in styles) {
+            if (styles.hasOwnProperty) {
+                elm.style[prop] = styles[prop];
+            }
+        }
     }
+
+    // The Carousel
 
     _mCarousel = function (carousel, settings) {
 
-        settings = _.defaults({
+        settings = defaults({
             visible: 1,
             move: 1,
             start: 1,
-            sensitivity: 0.25, // 1/4 of carousel to move prev/next on swipe
+            speed: 300,
+            after: undefined,
+            before: undefined,
+            // Swipe at least 1/4 of carousel width to move prev/next
+            sensitivity: 0.25,
             glimpseLeft: 0,
-            glimpseRight: 0
+            glimpseRight: 0,
+            prev: 'Prev',
+            next: 'Next'
         }, settings ? settings : {});
 
-        this.carousel = carousel;
-        this.container = carousel.children[0]; //().first();
-        this.items = this.container.children;
+        this.settings = settings;
 
-        //this.width = getWidth(this.carousel);
-        // console.log(this.width);
+        this.carousel = carousel;
+        this.container = carousel.children[0];
+        this.items = this.container.children;
 
         this.lastBreak = false;
         this.breakAtLow = false;
         this.breakAtHigh = false;
 
-        if (_.isArray(settings.visible)) {
-            this.breaks = settings.visible;
+        if (isArray(settings.visible)) {
+            this.breakpoints = settings.visible;
             this.visible = visible.apply(this);
             this.move = this.visible;
             this.glimpseLeft = (this.lastBreak[2]) ? this.lastBreak[2] : 0;
             this.glimpseRight = (this.lastBreak[3]) ? this.lastBreak[3] : 0;
         } else {
-            this.breaks = false;
+            this.breakpoints = false;
             this.visible = settings.visible;
             this.move = settings.move;
             this.glimpseLeft = settings.glimpseLeft;
             this.glimpseRight = settings.glimpseRight;
         }
-        
         
         this.position = settings.start;
         this.length = this.items.length;
@@ -95,53 +196,71 @@ var _mCarousel;
 
     _mCarousel.prototype = {
         goto: function (pos) {
+
+            var cssMarginPos, cssTranslatePos, carousel;
             
-            pos = _.isNumber(pos) ? pos : parseInt(pos, 10);
+            if (this.settings.before) {
+                this.settings.before.call(this, this);
+            }
 
-            var cssMargin, cssTranslate;
-
+            pos = isNumber(pos) ? pos : parseInt(pos, 10);
             pos = (pos < 1) ? 1 : (pos > this.max) ? this.max : pos;
             
             this.position = pos;
 
-            cssTranslate = (1 / this.length) * (pos - 1) * -100;
+            cssTranslatePos = (1 / this.length) * (pos - 1) * -100;
 
             if (_M.transitionDuration) {
                 this.container.style[_M.transitionDuration] = '';
             }
 
-            if (_M.translate3d) {
-                this.container
-                    .style[_M.transform] = 'translate3d(' + cssTranslate + '%,0,0)';
-            } else {
-                if (_M.transform && _M.transitionDuration) {
-                    this.container
-                        .style[_M.transform] = 'translateX(' + cssTranslate + '%)';
-                } else {
-                    cssMargin = (pos - 1) *
-                                (1 - this.glimpseRight - this.glimpseLeft) /
-                                this.visible * -100;
-                    
-                    animate(this.container, 'marginLeft', cssMargin, 300);
+            setPagerPosition.apply(this);
 
-                }
+            if (this.settings.after) {
+                carousel = this;
+                setTimeout(function () {
+                    carousel.settings.after.call(carousel, carousel);
+                }, this.settings.speed);
+            }
+
+            if (_M.translate3d) {
+                this.container.style[_M.transform] =
+                    'translate3d(' + cssTranslatePos + '%,0,0)';
+                return;
+            }
+
+            if (_M.transform && _M.transitionDuration) {
+                this.container.style[_M.transform] =
+                    'translateX(' + cssTranslatePos + '%)';
+                return;
             }
             
-            setPagerPosition.apply(this);
+            cssMarginPos =
+                (pos - 1) *
+                (1 - this.glimpseRight - this.glimpseLeft) /
+                this.visible * -100;
+
+            animate(this.container, 'marginLeft', cssMarginPos, this.settings.speed);
 
         },
         prev: function () {
             var goto = this.position - this.move;
-            goto = (goto < 1 && this.position > 1) ?
-                        1 : (goto < 1) ?
-                            this.max : goto;
+            if (goto < 1 && this.position > 1) {
+                goto = 1;
+            }
+            if (goto < 1) {
+                goto = this.max;
+            }
             this.goto(goto);
         },
         next: function () {
             var goto = this.position + this.move;
-            goto = (goto > this.max && this.position < this.max) ?
-                        this.max : (goto > this.max) ?
-                            1 : goto;
+            if (goto > this.max && this.position < this.max) {
+                goto = this.max;
+            }
+            if (goto > this.max) {
+                goto = 1;
+            }
             this.goto(goto);
         },
         setSize: function (n) {
@@ -155,7 +274,6 @@ var _mCarousel;
             this.max = this.length - this.visible + 1;
             
             setWidth.call(this, true);
-                
             setNavButtonVisibility.apply(this);
 
             if (this.position > this.max) {
@@ -171,14 +289,11 @@ var _mCarousel;
             resize;
 
         setWidth.call(this, true);
-        
         createNavigation.apply(this);
-
         setNavButtonVisibility.apply(this);
-
         setPagerPosition.apply(this);
 
-        if (carousel.breaks) {
+        if (carousel.breakpoints) {
             setupBreaks.apply(this);
         }
 
@@ -189,13 +304,15 @@ var _mCarousel;
         addEventListener(win, 'resize', resize);
 
         addEventListener(win, 'orientationchange', function () {
-            setTimeout(function () {
-                onWindowResize.apply(carousel);
-            }, 10);
+            setTimeout(resize, 10);
         });
 
         if (_M.touch && doc.addEventListener) {
             setUpTouchNav.apply(carousel);
+        }
+
+        if (this.position !== 1) {
+            this.goto(this.position);
         }
 
     }
@@ -226,20 +343,17 @@ var _mCarousel;
 
         var i, j;
         
-        // [[1, 1], [321, 2], [640, 3], [768, 4]]
-        for (i = 0, j = this.breaks.length; i < j; i += 1) {
-            if (this.lastBreak[0] === this.breaks[i][0]) {
+        for (i = 0, j = this.breakpoints.length; i < j; i += 1) {
+            if (this.lastBreak[0] === this.breakpoints[i][0]) {
                 break;
             }
         }
         
-        this.breakAtLow = (i < 1) ? [0, 0] : this.breaks[i - 1];
+        this.breakAtLow = (i < 1) ? [0, 0] : this.breakpoints[i - 1];
         
-        this.breakAtHigh = (i < this.breaks.length - 1) ?
-            this.breaks[i + 1] :
-            [
-                Math.max(window.screen.width, window.screen.height) * 2, 0
-            ];
+        this.breakAtHigh = (i < this.breakpoints.length - 1) ?
+            this.breakpoints[i + 1] :
+            [Math.max(window.screen.width, window.screen.height) * 2, 0];
 
         this.glimpseLeft = (this.lastBreak[2]) ? this.lastBreak[2] : 0;
         this.glimpseRight = (this.lastBreak[3]) ? this.lastBreak[3] : 0;
@@ -259,7 +373,6 @@ var _mCarousel;
             pagerLink = doc.createElement('a');
             pagerLink.setAttribute('href', '#goto' + (i + 1));
             pagerLink.innerHTML = (i + 1);
-            //pagerLink.className = 'visible';
             pager.appendChild(pagerLink);
         }
 
@@ -275,30 +388,34 @@ var _mCarousel;
 
         nav.appendChild(pager);
         
-        pagerLink = doc.createElement('a');
-        pagerLink.setAttribute('href', '#prev');
-        pagerLink.className = 'mCarousel-prev';
-        pagerLink.innerHTML = 'Prev';
-        
-        addEventListener(pagerLink, 'click', function () {
-            carousel.prev();
-            return false;
-        });
+        if (!_M.touch) {
 
-        nav.appendChild(pagerLink);
+            pagerLink = doc.createElement('a');
+            pagerLink.setAttribute('href', '#prev');
+            pagerLink.className = 'mCarousel-prev';
+            pagerLink.innerHTML = this.settings.prev;
+            
+            addEventListener(pagerLink, 'click', function () {
+                carousel.prev();
+                return false;
+            });
 
-        pagerLink = doc.createElement('a');
-        pagerLink.setAttribute('href', '#next');
-        pagerLink.className = 'mCarousel-next';
-        pagerLink.innerHTML = 'Next';
-        
-        addEventListener(pagerLink, 'click', function () {
-            carousel.next();
-            return false;
-        });
+            nav.appendChild(pagerLink);
 
-        nav.appendChild(pagerLink);
-        
+            pagerLink = doc.createElement('a');
+            pagerLink.setAttribute('href', '#next');
+            pagerLink.className = 'mCarousel-next';
+            pagerLink.innerHTML = this.settings.next;
+            
+            addEventListener(pagerLink, 'click', function () {
+                carousel.next();
+                return false;
+            });
+
+            nav.appendChild(pagerLink);
+
+        }
+                
         this.carousel.appendChild(nav);
 
         this.pagerLinks = nav.getElementsByTagName('DIV')[0].childNodes;
@@ -306,34 +423,27 @@ var _mCarousel;
 
     }
 
-    function pagerItemGrouped(i, j, v) {
-        return !(v === 1 || i % v === 0);
+    function pagerItemGrouped(i, visible) {
+        return !(visible === 1 || i % visible === 0);
     }
 
     function setPagerPosition() {
         
-
         var i, j, cssClass,
-            pagerLinks = this.pagerLinks,
-            visible = this.visible,
             pos = this.position - 1;
         
         for (i = 0, j = this.length; i < j; i += 1) {
-
-            if (i === pos || (i > pos && i < pos + visible)) {
+            if (i === pos || (i > pos && i < pos + this.visible)) {
                 cssClass = 'visible';
             } else {
                 cssClass = '';
             }
-            
-            if (pagerItemGrouped(i, j, this.visible)) {
+            if (pagerItemGrouped(i, this.visible)) {
                 cssClass += ' grouped';
             }
-
-            if (pagerLinks && pagerLinks[i]) {
-                pagerLinks[i].className = cssClass;
+            if (this.pagerLinks && this.pagerLinks[i]) {
+                this.pagerLinks[i].className = cssClass;
             }
-
         }
 
     }
@@ -348,7 +458,7 @@ var _mCarousel;
 
     function setWidth(setItemWidth) {
         
-        var width;
+        var width, i, j;
 
         width = getWidth(this.carousel) * this.length *
                 (1 - this.glimpseRight - this.glimpseLeft) / this.visible;
@@ -361,9 +471,9 @@ var _mCarousel;
         
         if (setItemWidth) {
             width = 1 / this.length * 100 + '%';
-            _.each(this.items, function (item) {
-                item.style.width = width;
-            });
+            for (i = 0, j = this.items.length; i < j; i += 1) {
+                this.items[i].style.width = width;
+            }
         }
         
     }
@@ -371,19 +481,22 @@ var _mCarousel;
     function visible() {
         var w = getWidth(doc.documentElement),
             i, j;
-        for (i = 0, j = this.breaks.length; i < j; i += 1) {
-            if (w >= this.breaks[i][0]) {
-                this.lastBreak = this.breaks[i];
+        for (i = 0, j = this.breakpoints.length; i < j; i += 1) {
+            if (w >= this.breakpoints[i][0]) {
+                this.lastBreak = this.breakpoints[i];
             } else {
                 break;
             }
+        }
+        if (!this.lastBreak) {
+            this.lastBreak = [1, 1];
         }
         return this.lastBreak[1];
     }
 
     function onWindowResize() {
         
-        if (this.breaks) {
+        if (this.breakpoints) {
         
             var w = getWidth(doc.documentElement);
         
@@ -419,21 +532,18 @@ var _mCarousel;
 
         this.start = {
             pageX: evt.touches[0].pageX,
-            pageY: evt.touches[0].pageY,
-            time: Number(new Date())
+            pageY: evt.touches[0].pageY
         };
 
         this.isScrolling = undefined;
-
         this.deltaX = 0;
-
         this.container.style[_M.transitionDuration] = '0';
     
     }
 
     function onTouchMove(evt) {
         
-        var pos, width;
+        var pos, width, resistance;
 
         if (evt.touches.length > 1 || evt.scale && evt.scale !== 1) {
             return;
@@ -449,23 +559,19 @@ var _mCarousel;
         if (!this.isScrolling) {
 
             evt.preventDefault();
+            evt.stopPropagation();
 
             width = getWidth(this.container);
+            resistance = width / this.length;
 
-            this.deltaX =
-                this.deltaX /
-                (
-                    (
-                        this.position === 1 && this.deltaX > 0 ||
-                        this.position === this.max &&
-                        this.deltaX < 0
-                    ) ?
-                (Math.abs(this.deltaX) / width + 1)
-                : 1);
+            if ((this.deltaX > 0 && this.position === 1) ||
+                (this.deltaX < 0 && this.position === this.max)) {
+                // Increase resistance if sliding outside of range
+                this.deltaX = this.deltaX / (Math.abs(this.deltaX) / resistance + 1);
+            }
 
             pos = (this.deltaX - (this.position - 1)  *  (width / this.length));
             this.container.style[_M.transform] = 'translate3d(' + pos + 'px,0,0)';
-            evt.stopPropagation();
 
         }
 
@@ -473,35 +579,39 @@ var _mCarousel;
 
     function onTouchEnd(evt) {
         
-        var isValidSlide, isPastBounds, moveTo, width;
+        evt.stopPropagation();
 
-        width = getWidth(this.container);
-
-        isValidSlide =
-            Number(new Date()) - this.start.time < 250 &&
-            Math.abs(this.deltaX) > 20 ||
-            Math.abs(this.deltaX) > width / this.length * this.visible * this.sensitivity;
-
-        isPastBounds =
-            (this.position === 1 && this.deltaX > 0) ||
-            this.position === this.max && this.deltaX < 0;
+        var width, minDeltaX, validSwipe, slidePossible, moveTo;
 
         if (!this.isScrolling) {
-            
-            moveTo = this.position + (isValidSlide && !isPastBounds ?
-                (this.deltaX < 0 ? 1 : -1) * this.move : 0);
+
+            width = getWidth(this.container);
+            minDeltaX = width / this.length * this.visible * this.settings.sensitivity;
+            validSwipe = Math.abs(this.deltaX) > minDeltaX;
+            slidePossible =
+                (this.deltaX > 0 && this.position > 1) ||
+                (this.deltaX < 0 && this.position < this.max);
+
+            moveTo = this.position;
+
+            if (validSwipe && slidePossible) {
+                moveTo += (this.deltaX < 0 ? 1 : -1) * this.move;
+            }
+
             if (moveTo > this.max) {
                 moveTo = this.max;
             }
+
             if (moveTo < 1) {
                 moveTo = 1;
             }
             
             this.goto(moveTo);
-        }
 
-        evt.stopPropagation();
+        }
+        
     }
+
 }(window, document));
 
 
