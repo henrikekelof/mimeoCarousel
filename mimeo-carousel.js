@@ -215,7 +215,7 @@ var _mCarousel;
             cssTranslatePos = (1 / this.length) * (pos - 1) * -100;
 
             if (_M.transitionDuration) {
-                this.container.style[_M.transitionDuration] = this.settings.speed;
+                this.container.style[_M.transitionDuration] = this.settings.speed + 'ms';
             }
 
             setPagerPosition.apply(this);
@@ -320,10 +320,8 @@ var _mCarousel;
             setUpTouchNav.apply(carousel);
         }
 
-        if (this.position !== 1) {
-            this.moveTo(this.position);
-        }
-
+        this.moveTo(this.position);
+        
     }
 
     function setUpTouchNav() {
