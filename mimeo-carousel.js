@@ -1,3 +1,4 @@
+
 // Mimeo Carousel v1.0 | Henrik Ekelöf - @henrikekelof
 
 var _mCarousel;
@@ -12,11 +13,18 @@ var _mCarousel;
         _M,
         el = doc.createElement('div'),
         elStyle = el.style,
-        Modernizr = window.Modernizr || {},
-        prefixes = ['ms', 'O', 'Moz', 'Webkit'];
+        Modernizr = win.Modernizr || {},
+        prefixes = ['ms', 'O', 'Moz', 'Webkit'],
+        transformProps = {
+            'transform': 'transform',
+            'msTransform': '-ms-transform',
+            'OTransform': '-o-transform',
+            'MozTransform': '-moz-transform',
+            'WebkitTransform': '-webkit-transform'
+        };
 
-    if (window.getComputedStyle) {
-        document.body.insertBefore(el, null);
+    if (win.getComputedStyle) {
+        doc.body.insertBefore(el, null);
     }
 
     function isString(obj) {
@@ -44,18 +52,11 @@ var _mCarousel;
 
     function computed(prefixedProp, val) {
 
-        var style,
-            props = {
-                'transform': 'transform',
-                'msTransform': '-ms-transform',
-                'OTransform': '-o-transform',
-                'MozTransform': '-moz-transform',
-                'WebkitTransform': '-webkit-transform'
-            };
+        var style;
 
         el.style[prefixedProp] = val;
 
-        style = window.getComputedStyle(el).getPropertyValue(props[prefixedProp]);
+        style = win.getComputedStyle(el).getPropertyValue(transformProps[prefixedProp]);
 
         if (style !== undefined && style.length > 0 && style !== 'none') {
             return true;
@@ -66,9 +67,12 @@ var _mCarousel;
     }
 
     _M = {
+        transition: prefixed('transition'),
         transitionDuration: prefixed('transitionDuration'),
         transform: prefixed('transform')
     };
+
+    _M.transformProp = _M.transform ? transformProps[_M.transform] : false;
     
     _M.translate3d = (_M.transform) ?
                         computed(_M.transform, 'translate3d(1px,0,0)') :
@@ -77,8 +81,8 @@ var _mCarousel;
     _M.touch = (Modernizr.touch) ?
         Modernizr.touch : 'ontouchstart' in doc.documentElement;
 
-    if (window.getComputedStyle) {
-        document.body.removeChild(el);
+    if (win.getComputedStyle) {
+        doc.body.removeChild(el);
     }
 
     // Utilities
@@ -122,7 +126,7 @@ var _mCarousel;
         pos = parseInt(element.style.marginLeft, 10);
         times = time / 10;
         step = (end - pos) / times;
-        interval = window.setInterval(function () {
+        interval = win.setInterval(function () {
             counter += 1;
             if (counter === times) {
                 element.style.marginLeft = end + '%';
@@ -195,7 +199,7 @@ var _mCarousel;
     };
 
     _mCarousel.prototype = {
-        goto: function (pos) {
+        moveTo: function (pos) {
 
             var cssMarginPos, cssTranslatePos, carousel;
             
@@ -211,7 +215,7 @@ var _mCarousel;
             cssTranslatePos = (1 / this.length) * (pos - 1) * -100;
 
             if (_M.transitionDuration) {
-                this.container.style[_M.transitionDuration] = '';
+                this.container.style[_M.transitionDuration] = this.settings.speed;
             }
 
             setPagerPosition.apply(this);
@@ -244,24 +248,24 @@ var _mCarousel;
 
         },
         prev: function () {
-            var goto = this.position - this.move;
-            if (goto < 1 && this.position > 1) {
-                goto = 1;
+            var moveTo = this.position - this.move;
+            if (moveTo < 1 && this.position > 1) {
+                moveTo = 1;
             }
-            if (goto < 1) {
-                goto = this.max;
+            if (moveTo < 1) {
+                moveTo = this.max;
             }
-            this.goto(goto);
+            this.moveTo(moveTo);
         },
         next: function () {
-            var goto = this.position + this.move;
-            if (goto > this.max && this.position < this.max) {
-                goto = this.max;
+            var moveTo = this.position + this.move;
+            if (moveTo > this.max && this.position < this.max) {
+                moveTo = this.max;
             }
-            if (goto > this.max) {
-                goto = 1;
+            if (moveTo > this.max) {
+                moveTo = 1;
             }
-            this.goto(goto);
+            this.moveTo(moveTo);
         },
         setSize: function (n) {
             
@@ -277,7 +281,7 @@ var _mCarousel;
             setNavButtonVisibility.apply(this);
 
             if (this.position > this.max) {
-                this.goto(this.max);
+                this.moveTo(this.max);
             }
 
         }
@@ -287,6 +291,11 @@ var _mCarousel;
 
         var carousel = this,
             resize;
+
+        if (_M.transformProp && _M.transition) {
+            this.container.style[_M.transition] =
+                _M.transformProp + ' ' + this.settings.speed + 'ms';
+        }
 
         setWidth.call(this, true);
         createNavigation.apply(this);
@@ -312,7 +321,7 @@ var _mCarousel;
         }
 
         if (this.position !== 1) {
-            this.goto(this.position);
+            this.moveTo(this.position);
         }
 
     }
@@ -353,7 +362,7 @@ var _mCarousel;
         
         this.breakAtHigh = (i < this.breakpoints.length - 1) ?
             this.breakpoints[i + 1] :
-            [Math.max(window.screen.width, window.screen.height) * 2, 0];
+            [Math.max(win.screen.width, win.screen.height) * 2, 0];
 
         this.glimpseLeft = (this.lastBreak[2]) ? this.lastBreak[2] : 0;
         this.glimpseRight = (this.lastBreak[3]) ? this.lastBreak[3] : 0;
@@ -371,17 +380,17 @@ var _mCarousel;
 
         for (i = 0, j = this.length; i < j; i += 1) {
             pagerLink = doc.createElement('a');
-            pagerLink.setAttribute('href', '#goto' + (i + 1));
+            pagerLink.setAttribute('href', '#moveTo' + (i + 1));
             pagerLink.innerHTML = (i + 1);
             pager.appendChild(pagerLink);
         }
 
         addEventListener(pager, 'click', function (evt) {
             var target = evt.target || evt.srcElement,
-                goto = target.getAttribute('href');
-            if (goto) {
-                goto = goto.replace(/[^0-9.]/g, '');
-                carousel.goto(parseInt(goto, 10));
+                moveTo = target.getAttribute('href');
+            if (moveTo) {
+                moveTo = moveTo.replace(/[^0-9.]/g, '');
+                carousel.moveTo(parseInt(moveTo, 10));
             }
             return false;
         });
@@ -606,7 +615,7 @@ var _mCarousel;
                 moveTo = 1;
             }
             
-            this.goto(moveTo);
+            this.moveTo(moveTo);
 
         }
         
